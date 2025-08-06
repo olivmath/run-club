@@ -1,5 +1,5 @@
 stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/hello_world.wasm \
+  --wasm target/wasm32-unknown-unknown/release/run_club.wasm \
   --source alice \
   --network testnet \
-  --alias hello_world
+  --alias run_club
