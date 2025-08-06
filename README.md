@@ -1,24 +1,120 @@
-# Soroban Project
+# Stellar Run Club - Soroban Smart Contracts
 
-## Project Structure
+This directory contains the Soroban smart contracts for the Stellar Run Club application.
 
-This repository uses the recommended structure for a Soroban project:
-```text
-.
-├── contracts
-│   └── hello_world
-│       ├── src
-│       │   ├── lib.rs
-│       │   └── test.rs
-│       └── Cargo.toml
-├── Cargo.toml
-└── README.md
+## 🚀 Deployment Status
+
+**Contract Successfully Deployed!**
+- **Contract ID**: `CDIJN5LCNOVQZOBIRLAD32PAR2EHYMS7T7YSE6TWSK7RE4CMGT67CC3M`
+- **Network**: Stellar Testnet
+- **WASM Hash**: `507ae36b7ccf47daeed866cf776cc6ea62fcb3ef4469f80ca20d56981f2f336f`
+- **Explorer**: [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDIJN5LCNOVQZOBIRLAD32PAR2EHYMS7T7YSE6TWSK7RE4CMGT67CC3M)
+
+## 📋 Contract Functions
+
+The Run Club contract provides the following functionality:
+
+### Core Functions
+- `initialize()` - Initialize the contract
+- `create_club()` - Create a new running club with USDC incentives
+- `activate()` - Activate a club for participation
+- `add_member()` - Add members to a club
+- `deposit_usdc()` - Deposit USDC into club treasury
+
+### Token Management
+- `add_km_tokens()` - Convert tracked kilometers into KM tokens
+- `get_user_km_tokens()` - Get user's KM token balance for a club
+- `get_total_km_tokens()` - Get total KM tokens in a club
+
+### Rewards & Withdrawals
+- `calculate_usdc_reward()` - Calculate USDC rewards based on KM tokens
+- `redeem_usdc()` - Withdraw USDC rewards to custodial wallet
+- `get_redemption_info()` - Get redemption details for a user
+
+### Query Functions
+- `get_club()` - Get club information
+- `get_active_clubs()` - List all active clubs
+- `get_members()` - Get club members
+- `is_club_period_ended()` - Check if club period has ended
+
+## 🛠️ Development
+
+### Building the Contract
+
+```bash
+# Navigate to the contract directory
+cd contracts/run-club
+
+# Build the contract
+stellar contract build
 ```
 
-- New Soroban contracts can be put in `contracts`, each in their own directory. There is already a `hello_world` contract in there to get you started.
-- If you initialized this project with any other example contracts via `--with-example`, those contracts will be in the `contracts` directory as well.
-- Contracts should have their own `Cargo.toml` files that rely on the top-level `Cargo.toml` workspace for their dependencies.
-- Frontend libraries can be added to the top-level directory as well. If you initialized this project with a frontend template via `--frontend-template` you will have those files already included.
+### Deploying the Contract
+
+```bash
+# Deploy to testnet
+./deploy.sh
+```
+
+### Testing the Contract
+
+```bash
+# Run basic functionality tests
+./test_contract.sh
+```
+
+## 📁 Project Structure
+
+```text
+.
+├── contracts/
+│   └── run-club/
+│       ├── src/
+│       │   ├── lib.rs              # Main contract implementation
+│       │   └── club_manage/        # Club management modules
+│       ├── tests/                  # Contract tests
+│       ├── Cargo.toml             # Contract dependencies
+│       └── Makefile               # Build scripts
+├── deploy.sh                      # Deployment script
+├── test_contract.sh              # Testing script
+├── Cargo.toml                    # Workspace configuration
+└── README.md                     # This file
+```
+
+## 🏃‍♂️ Contract Features
+
+### Club Management
+- Create running clubs with customizable USDC incentives
+- Set withdrawal rules (Equal distribution or Unlimited based on KM tokens)
+- Manage club membership and activation
+
+### Token Economy
+- Convert tracked kilometers to KM tokens (1:1 ratio)
+- USDC rewards distributed based on KM token holdings
+- Support for both equal and performance-based reward distribution
+
+### Security Features
+- Organizer-only functions for club management
+- Time-based club periods with automatic expiration
+- Secure USDC withdrawal to custodial wallets
+- Input validation and error handling
+
+## 🔧 Requirements
+
+- Rust 1.70+
+- Stellar CLI
+- Soroban SDK 22.0.0
+- Configured Stellar testnet identity
+
+## 📖 Usage Examples
+
+See the `test_contract.sh` script for examples of:
+- Initializing the contract
+- Creating clubs
+- Adding members
+- Depositing USDC
+- Tracking kilometers and earning KM tokens
+- Calculating and redeeming USDC rewards
 
 
 ### Descrição do Projeto e Fluxo da Aplicação
