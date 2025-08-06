@@ -166,3 +166,10 @@ O projeto é um aplicativo de rastreamento de corrida, similar ao Nike Run Club,
 
 ### Resumo
 O fluxo do aplicativo é projetado para ser intuitivo: o usuário faz login, cria ou entra em um clube, corre usando o Apple Watch, ganha KM tokens, acompanha seu progresso no iPhone e resgata USDC no final do mês. Todo o processo é apresentado como uma experiência segura e simples, com foco na competição e nos incentivos, sem expor detalhes técnicos como blockchain ou Soroswap. O organizador tem controle sobre as regras do clube, enquanto os participantes desfrutam de uma experiência gamificada e recompensadora.
+
+
+- [x] Club manage
+- [ ] Token
+- [ ] Token Factory
+- [ ] USDC manage
+- [ ] Soroswap Connect
