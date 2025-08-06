@@ -278,4 +278,164 @@ impl RunClubContract {
             .get(&DataKey::UserKmTokens(user, club_id))
             .unwrap_or(0i128)
     }
+
+    /// Verifica se o período do clube terminou
+    pub fn is_club_period_ended(env: Env, club_id: u64) -> bool {
+        let club: Club = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Club(club_id))
+            .expect("Club not found");
+
+        let current_timestamp = env.ledger().timestamp();
+        current_timestamp >= club.month_end_timestamp
+    }
+
+    /// Calcula o total de tokens KM de todos os membros do clube
+    pub fn get_total_km_tokens(env: Env, club_id: u64) -> i128 {
+        let club: Club = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Club(club_id))
+            .expect("Club not found");
+
+        let mut total_km = 0i128;
+        for member in club.members.iter() {
+            let member_km = env
+                .storage()
+                .persistent()
+                .get(&DataKey::UserKmTokens(member.clone(), club_id))
+                .unwrap_or(0i128);
+            total_km += member_km;
+        }
+        total_km
+    }
+
+    /// Calcula a recompensa USDC para um usuário baseado na regra de distribuição
+    pub fn calculate_usdc_reward(env: Env, club_id: u64, user: Address) -> i128 {
+        let club: Club = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Club(club_id))
+            .expect("Club not found");
+
+        if !Self::is_club_period_ended(env.clone(), club_id) {
+            panic!("Club period has not ended yet");
+        }
+
+        let user_km_tokens = Self::get_user_km_tokens(env.clone(), user.clone(), club_id);
+        
+        if user_km_tokens == 0 {
+            return 0i128;
+        }
+
+        match club.withdrawal_rule {
+            WithdrawalRule::Equal => {
+                // Distribuição igual: divide o USDC total igualmente entre membros com KM tokens
+                let total_km = Self::get_total_km_tokens(env.clone(), club_id);
+                if total_km == 0 {
+                    return 0i128;
+                }
+                
+                // Contar quantos membros têm KM tokens
+                let mut members_with_tokens = 0u32;
+                for member in club.members.iter() {
+                    let member_km = Self::get_user_km_tokens(env.clone(), member.clone(), club_id);
+                    if member_km > 0 {
+                        members_with_tokens += 1;
+                    }
+                }
+                
+                if members_with_tokens == 0 {
+                    return 0i128;
+                }
+                
+                club.usdc_deposited / (members_with_tokens as i128)
+            },
+            WithdrawalRule::Unlimited => {
+                // Distribuição proporcional aos KM tokens
+                let total_km = Self::get_total_km_tokens(env.clone(), club_id);
+                if total_km == 0 {
+                    return 0i128;
+                }
+                
+                (club.usdc_deposited * user_km_tokens) / total_km
+            }
+        }
+    }
+
+    /// Executa o resgate de tokens KM por USDC
+    pub fn redeem_usdc(env: Env, club_id: u64, user: Address, destination: Address) -> i128 {
+        user.require_auth();
+        
+        let mut club: Club = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Club(club_id))
+            .expect("Club not found");
+
+        if !club.is_active {
+            panic!("Club is not active");
+        }
+
+        if !Self::is_club_period_ended(env.clone(), club_id) {
+            panic!("Club period has not ended yet");
+        }
+
+        // Verificar se o usuário é membro do clube
+        let mut is_member = false;
+        for member in club.members.iter() {
+            if member == user {
+                is_member = true;
+                break;
+            }
+        }
+
+        if !is_member {
+            panic!("User is not a member of this club");
+        }
+
+        let user_km_tokens = Self::get_user_km_tokens(env.clone(), user.clone(), club_id);
+        
+        if user_km_tokens == 0 {
+            panic!("User has no KM tokens to redeem");
+        }
+
+        // Calcular recompensa USDC
+        let usdc_reward = Self::calculate_usdc_reward(env.clone(), club_id, user.clone());
+        
+        if usdc_reward > club.usdc_deposited {
+            panic!("Insufficient USDC in club");
+        }
+
+        // Queimar/zerar os tokens KM do usuário
+        env.storage()
+            .persistent()
+            .set(&DataKey::UserKmTokens(user.clone(), club_id), &0i128);
+
+        // Reduzir o USDC do clube
+        club.usdc_deposited -= usdc_reward;
+        env.storage().persistent().set(&DataKey::Club(club_id), &club);
+
+        // Emitir evento de resgate
+        env.events().publish(
+            (symbol_short!("usdc_red"),),
+            (club_id, user, destination, usdc_reward),
+        );
+
+        usdc_reward
+    }
+
+    /// Obtém informações de resgate para um usuário
+    pub fn get_redemption_info(env: Env, club_id: u64, user: Address) -> (i128, i128, bool) {
+        let user_km_tokens = Self::get_user_km_tokens(env.clone(), user.clone(), club_id);
+        let usdc_reward = if Self::is_club_period_ended(env.clone(), club_id) {
+            Self::calculate_usdc_reward(env.clone(), club_id, user)
+        } else {
+            0i128
+        };
+        let period_ended = Self::is_club_period_ended(env.clone(), club_id);
+        
+        (user_km_tokens, usdc_reward, period_ended)
+    }
 }
