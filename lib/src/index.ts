@@ -31,7 +31,12 @@ if (typeof window !== 'undefined') {
 }
 
 
-
+export const networks = {
+  testnet: {
+    networkPassphrase: "Test SDF Network ; September 2015",
+    contractId: "CD2A7O3F5WGXMMJPBTPPUQTURAW2BYURSDOHVZ5ANDXMNYKREFAOABIJ",
+  }
+} as const
 
 /**
  * Regras de resgate para os clubes

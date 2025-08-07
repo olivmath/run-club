@@ -183,6 +183,13 @@ impl RunClubContract {
         club.members.push_back(member.clone());
         env.storage().persistent().set(&DataKey::Club(club_id), &club);
 
+        // In add_member, after adding to club.members:
+        let mut user_clubs: Vec<u64> = env.storage().persistent().get(&DataKey::UserClubs(member.clone())).unwrap_or(Vec::new(&env));
+        if !user_clubs.contains(&club_id) {
+        user_clubs.push_back(club_id);
+        env.storage().persistent().set(&DataKey::UserClubs(member.clone()), &user_clubs);
+        }
+
         // Emit event
         env.events().publish(
             (symbol_short!("mem_add"),),
@@ -438,4 +445,9 @@ impl RunClubContract {
         
         (user_km_tokens, usdc_reward, period_ended)
     }
+}
+
+// Add new method
+pub fn get_user_clubs(env: Env, user: Address) -> Vec<u64> {
+env.storage().persistent().get(&DataKey::UserClubs(user)).unwrap_or(Vec::new(&env))
 }
