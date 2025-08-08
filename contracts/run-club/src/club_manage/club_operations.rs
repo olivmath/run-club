@@ -1,10 +1,11 @@
-use soroban_sdk::{Address, Env, String, Vec};
+use soroban_sdk::{contractimpl, Address, Env, String, Vec};
 
+use crate::token_factory;
 use crate::{Club, DataKey, RunClubContract, WithdrawalRule};
 
 impl RunClubContract {
     /// Cria um novo clube de corrida
-    pub fn create_club(
+    pub fn create_club_(
         env: Env,
         organizer: Address,
         name: String,
@@ -30,6 +31,11 @@ impl RunClubContract {
             .unwrap_or(0u64);
         let club_id = club_counter + 1;
 
+        // Create club token
+        let token_name = &name;
+        let token_symbol = &name;
+        let token_address =
+            token_factory::create_token(&env, &organizer, &token_name, &token_symbol);
         // Calcular timestamp de fim do mês
         let current_timestamp = env.ledger().timestamp();
         let month_end_timestamp = current_timestamp + (duration_days as u64 * 24 * 60 * 60);
@@ -44,11 +50,16 @@ impl RunClubContract {
             withdrawal_rule,
             month_end_timestamp,
             is_active: false, // Será ativado quando USDC for depositado
+            token_address,
         };
 
         // Salvar clube
-        env.storage().persistent().set(&DataKey::Club(club_id), &club);
-        env.storage().persistent().set(&DataKey::ClubCounter, &club_id);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Club(club_id), &club);
+        env.storage()
+            .persistent()
+            .set(&DataKey::ClubCounter, &club_id);
 
         // Emitir evento
         env.events().publish(
@@ -77,13 +88,13 @@ impl RunClubContract {
         }
 
         club.members.push_back(member.clone());
-        env.storage().persistent().set(&DataKey::Club(club_id), &club);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Club(club_id), &club);
 
         // Emit event
-        env.events().publish(
-            (soroban_sdk::symbol_short!("mem_add"),),
-            (club_id, member),
-        );
+        env.events()
+            .publish((soroban_sdk::symbol_short!("mem_add"),), (club_id, member));
     }
 
     /// Remove um membro do clube (apenas organizador)
@@ -117,7 +128,9 @@ impl RunClubContract {
         }
 
         club.members = new_members;
-        env.storage().persistent().set(&DataKey::Club(club_id), &club);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Club(club_id), &club);
     }
 
     /// Remove a club (only organizer)
